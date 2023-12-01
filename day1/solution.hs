@@ -1,4 +1,4 @@
-import Data.Char (isAlpha)
+import Data.Char (isAlpha, isDigit)
 
 -- Part 1 is trivial
 parseLine1 :: String -> Int
@@ -34,15 +34,7 @@ parseF s
     |beginsWith "seven" s = 7
     |beginsWith "eight" s = 8
     |beginsWith "nine" s  = 9
-    |beginsWith "1" s     = 1
-    |beginsWith "2" s     = 2
-    |beginsWith "3" s     = 3
-    |beginsWith "4" s     = 4
-    |beginsWith "5" s     = 5
-    |beginsWith "6" s     = 6
-    |beginsWith "7" s     = 7
-    |beginsWith "8" s     = 8
-    |beginsWith "9" s     = 9
+    |isDigit (head s)     = (read :: String -> Int) . take 1 $ s 
 parseF (_:xs)             = parseF xs
 
 -- Parsing a reversed string forwards. As before.
@@ -58,15 +50,7 @@ parseR s
     |beginsWith "neves" s = 7
     |beginsWith "thgie" s = 8
     |beginsWith "enin" s  = 9
-    |beginsWith "1" s     = 1
-    |beginsWith "2" s     = 2
-    |beginsWith "3" s     = 3
-    |beginsWith "4" s     = 4
-    |beginsWith "5" s     = 5
-    |beginsWith "6" s     = 6
-    |beginsWith "7" s     = 7
-    |beginsWith "8" s     = 8
-    |beginsWith "9" s     = 9
+    |isDigit (head s)     = (read :: String -> Int) . take 1 $ s 
 parseR (_:xs)             = parseR xs
 
 -- The answer reading from external file
