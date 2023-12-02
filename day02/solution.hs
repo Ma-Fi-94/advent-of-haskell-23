@@ -1,6 +1,5 @@
 import Utils (tok, at, endsWith, readInt)
 import Data.Char (isDigit)
-import Debug.Trace
 
 -- Sugar
 type GameID = Int
