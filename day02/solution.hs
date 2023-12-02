@@ -20,9 +20,9 @@ parseLine line = (gameID, findMax (0,0,0) rgbTokens)
 
     findMax (r,g,b) [] = (r,g,b)
     findMax (r,g,b) (s:ss)
-        |(endsWith "red" s)   = findMax (maximum [r, val], g, b) ss
-        |(endsWith "green" s) = findMax (r, maximum [g, val], b) ss
-        |(endsWith "blue" s)  = findMax (r, g, maximum [b, val]) ss
+        |(endsWith "red" s)   = findMax (max r val, g, b) ss
+        |(endsWith "green" s) = findMax (r, max g val, b) ss
+        |(endsWith "blue" s)  = findMax (r, g, max b val) ss
           where
             val = readInt . takeWhile isDigit $ s
 
