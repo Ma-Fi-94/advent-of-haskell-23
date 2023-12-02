@@ -34,7 +34,6 @@ parseLine line = (gameID, findMax (0,0,0) rgbTokens)
 
 -- Only return those games where all values of RGB don't exceed given threshold
 filterGamesThr :: RGB -> [Game] -> [Game]
-filterGamesThr _ []                     = []
 filterGamesThr (rmax, gmax, bmax) games = filter allBelow games
   where
     allBelow = \(_, (r,g,b)) -> r <= rmax && g <= gmax && b <= bmax
