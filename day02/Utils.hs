@@ -1,17 +1,20 @@
 module Utils where
 
--- First argument is the prefix to be checked
-beginsWith :: String -> String -> Bool
-beginsWith [] _          = True
-beginsWith _ []          = False
-beginsWith (x:xs) (y:ys) = (x == y) && beginsWith xs ys
+-----------
+-- Sugar --
+-----------
+
+readInt     = (read :: String -> Int)
+readInteger = (read :: String -> Integer)
 
 
--- First argument is the suffix to be checked
-endsWith :: String -> String -> Bool
-endsWith [] _ = True
-endsWith _ [] = False
-endsWith x y  = beginsWith (reverse x) (reverse y)
+-----------
+-- Lists --
+-----------
+
+-- Like !!, but order of operands is saner
+at :: Int -> [a] -> a
+at n list = list !! n
 
 
 -- Tokenise an array into a list of arrays based on delimiters
@@ -25,10 +28,15 @@ tok delims xs = token : tok delims rest
     rest        = dropWhile isDelimiter $ dropWhile (not . isDelimiter) xs 
 
 
--- Like !!, but order of operands is saner
-at :: Int -> [a] -> a
-at n list = list !! n
+-- First argument is the prefix to be checked
+beginsWith :: Eq a => [a] -> [a] -> Bool
+beginsWith [] _          = True
+beginsWith _ []          = False
+beginsWith (x:xs) (y:ys) = (x == y) && beginsWith xs ys
 
--- Sugar
-readInt :: String -> Int
-readInt = read
+
+-- First argument is the suffix to be checked
+endsWith :: Eq a => [a] -> [a] -> Bool
+endsWith x y  = beginsWith (reverse x) (reverse y)
+
+
