@@ -1,61 +1,33 @@
-import Data.Char (isAlpha, isDigit)
+{-# LANGUAGE OverloadedStrings #-}
+
+import Data.Char (isAlpha)
+import Data.Text (pack, unpack, replace)
 
 -- Part 1 is trivial
-parseLine1 :: String -> Int
-parseLine1 s = 10 * (firstDigit s) + (lastDigit s)
+parseLine :: String -> Int
+parseLine s = 10 * (firstDigit s) + (lastDigit s)
   where
     firstDigit = (read :: String -> Int) . take 1 . dropWhile isAlpha
     lastDigit  = firstDigit . reverse
 
 
--- Part 2:
-parseLine2 :: String -> Int
-parseLine2 s = 10 * (firstDigit s) + (lastDigit s)
-  where
-    firstDigit = parseF
-    lastDigit  = parseR . reverse
-
--- Helper for easier comparison. First argument is the prefix to be checked
-beginsWith :: String -> String -> Bool
-beginsWith [] _          = True
-beginsWith _ []          = False
-beginsWith (x:xs) (y:ys) = (x == y) && beginsWith xs ys
-
--- Parsing a string forwards. Exceedingly ugly, my apologies.
-parseF :: String -> Int
-parseF []                 = error "lol no"
-parseF s
-    |beginsWith "one" s   = 1
-    |beginsWith "two" s   = 2
-    |beginsWith "three" s = 3
-    |beginsWith "four" s  = 4
-    |beginsWith "five" s  = 5
-    |beginsWith "six" s   = 6
-    |beginsWith "seven" s = 7
-    |beginsWith "eight" s = 8
-    |beginsWith "nine" s  = 9
-    |isDigit (head s)     = (read :: String -> Int) . take 1 $ s 
-parseF (_:xs)             = parseF xs
-
--- Parsing a reversed string forwards. As before.
-parseR :: String -> Int
-parseR []                  = error "lol no"
-parseR s
-    |beginsWith "eno" s   = 1
-    |beginsWith "owt" s   = 2
-    |beginsWith "eerht" s = 3
-    |beginsWith "ruof" s  = 4
-    |beginsWith "evif" s  = 5
-    |beginsWith "xis" s   = 6
-    |beginsWith "neves" s = 7
-    |beginsWith "thgie" s = 8
-    |beginsWith "enin" s  = 9
-    |isDigit (head s)     = (read :: String -> Int) . take 1 $ s 
-parseR (_:xs)             = parseR xs
+-- Part 2 will use the routine from Part 1 after this transformation
+replaceWords :: String -> String
+replaceWords = unpack
+             . replace "nine"  "nine9nine"
+             . replace "eight" "eigeht8eight"
+             . replace "seven" "seven7seven"
+             . replace "six"   "six6six"
+             . replace "five"  "five5five"
+             . replace "four"  "four4four"
+             . replace "three" "three3three"
+             . replace "two"   "two2two"
+             . replace "one"   "one1one"
+             . pack
 
 -- The answer reading from external file
 main = do
     filecontents <- readFile "input.txt"
-    print $ sum . map parseLine1 . lines $ filecontents
-    print $ sum . map parseLine2 . lines $ filecontents
+    print $ sum . map parseLine . lines $ filecontents
+    print $ sum . map (parseLine . replaceWords ) . lines $ filecontents
     print $ "Done."
