@@ -28,6 +28,14 @@ tok delims xs = token : tok delims rest
     rest        = dropWhile isDelimiter $ dropWhile (not . isDelimiter) xs 
 
 
+-- Replace all occurences of a list item
+repl :: Eq a => a -> a -> [a] -> [a]
+repl _ _ [] = []
+repl old new (x:xs) = x' : (repl old new xs)
+  where
+    x' = if (x /= old) then x else new
+
+
 -- First argument is the prefix to be checked
 beginsWith :: Eq a => [a] -> [a] -> Bool
 beginsWith [] _          = True
