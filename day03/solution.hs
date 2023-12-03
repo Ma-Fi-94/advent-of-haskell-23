@@ -30,6 +30,13 @@ getNumbers = go 0 0
             c'     = c + offset
 
 
+-- Find the box around a number.
+-- I.e. the upperleft and lowerright coordinates directly next to the number.
+box :: Number -> Numberbox
+box ((r,c), number) = ((r-1, c-1), (r+1, c2))
+  where
+    c2 = c + (length . show $ number)
+
 ------------
 -- Part 1 --
 ------------
@@ -43,13 +50,6 @@ getSymbols = go 0 0
     go r c ((x:xs):lists)
         |(isDigit x) || (x == '.') = go r (c+1) (xs:lists)
         |otherwise                 = (r, c) : go r (c+1) (xs:lists)
-
-
--- Find the box around a number
-box :: Number -> Numberbox
-box ((r,c), number) = ((r-1, c-1), (r+1, c2))
-  where
-    c2 = c + (length . show $ number)
 
 
 -- Check whether, given the position of all symbols, a given number is a "part number".
