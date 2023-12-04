@@ -1,3 +1,4 @@
+import Data.List (intersect)
 import Utils (readInt, tok, at)
 
 -----------
@@ -23,9 +24,8 @@ parseLine s = (wins, numbers)
 
 
 -- Find the number of matching numbers on a Card.
--- I.e. the length of the intersection of the two lists of numbers.
 nbMatches :: Card -> Int
-nbMatches (wins, numbers) = length $ filter (`elem` wins) numbers
+nbMatches (wins, numbers) = length $ intersect wins numbers
 
 
 ------------
@@ -91,7 +91,5 @@ main = do
 
     -- The final answer is the sum of the nbOwned of all first elements
     print $ sum . map snd . map head $ steps
-
-
 
     print $ "---------- Done. ----------"
