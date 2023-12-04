@@ -49,14 +49,14 @@ scoreCard (wins, numbers)
 
 
 -- Process the first card of a given stash of cards.
--- - We return the first card without changing it.
--- - The cound of the next nbMatches cards are increased by nbOwned.
+-- - We drop the first care
+-- - The count of the next nbMatches cards are increased by nbOwned.
 -- - The remaining cards are returned unchanged.
 -- We don't have to worry about "overshooting", as Prelude.take
 -- and Prelude.drop implicitly take care of lists that are too short.
 step :: Stash -> Stash
 step [] = []
-step (first@(nbMatches, nbOwned):rest) = [first] ++ changeds ++ unchangeds
+step ((nbMatches, nbOwned):rest) = changeds ++ unchangeds
   where
     changeds   = map (\(m,o) -> (m,o+nbOwned)) (take nbMatches rest)
     unchangeds = drop nbMatches rest
@@ -84,7 +84,7 @@ main = do
     -- Because step [] = [], we get an infinite list,
     -- so we only take non-empty lists.
     -- (I know this is kinda hacky and there prolly is a better way.)
-    let steps = takeWhile (/=[]) $ iterate (tail . step) stash
+    let steps = takeWhile (/=[]) $ iterate step stash
 
     -- Prettyprinting. This will produce a lot of output.
     -- mapM_ print steps
