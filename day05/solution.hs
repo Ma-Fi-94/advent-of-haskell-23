@@ -1,4 +1,4 @@
-import Utils (readInt, tok, at, groupn)
+import Utils (readInt, tok, at)
 import Data.List (sort)
 
 -----------
@@ -8,27 +8,23 @@ import Data.List (sort)
 type Rule  = (Int, Int, Int) -- (src, dst, len) 
 type Table = [Rule]          -- a block from the input text
 
-----------
--- Both --
-----------
+------------
+-- Part 1 --
+------------
 
 -- Parse a line of three numbers from the input text
-parseRule :: String -> Rule
-parseRule str = (src, dst, len)
+parseRule1 :: String -> Rule
+parseRule1 str = (src, dst, len)
   where
     (src, dst, len) = (numbers !! 1, numbers !! 0, numbers !! 2)
     numbers         = map readInt . tok " " $ str
 
 -- Look up the corresponding output to the input x in a Table of Rule-s
-lookup' :: Table -> Int -> Int
-lookup' [] x = x
-lookup' ((src, dst, len):ms) x
+lookup1 :: Table -> Int -> Int
+lookup1 [] x = x
+lookup1 ((src, dst, len):ms) x
     |(x >= src) && (x < src+len) = dst + x - src
-    |otherwise                   = lookup' ms x
-
-------------
--- Part 1 --
-------------
+    |otherwise                   = lookup1 ms x
 
 -- Extract seed numbers from the first line of input text
 getSeeds1 :: [String] -> [Int]
@@ -39,11 +35,6 @@ getSeeds1 input = map readInt . tok " " . at 1 . tok ":" . at 0 $ input
 ------------
 
 -- Extract seed numbers from the first line of input text
-getSeeds2 :: [String] -> [Int]
-getSeeds2 input = concat . map expand $ sublists
-  where
-    sublists  = groupn 2 $ getSeeds1 input
-    expand xs = [(xs!!0)..((xs!!0) + (xs!!1) - 1)] 
 
 -------------
 -- Answers --
@@ -54,21 +45,20 @@ main = do
 
     -- Part 1
     let seeds = getSeeds1 . lines $ filecontents -- part 1
-    -- let seeds = getSeeds2 . lines $ filecontents -- part 2, correct, but WAY too slow.
 
-    let tables = map (map parseRule)             -- parse the rules for every table
+    let tables = map (map parseRule1)            -- parse every tables' rules
                . map tail                        -- drop table headings
                . tok [""]                        -- separate tables
-               . drop 2                          -- drop first two lines
-               . lines $ filecontents
+               . drop 2                          -- drop top two lines (seeds)
+               . lines $ filecontents            -- split up file lines
     
-    let locations = map (lookup' (tables!!6))    -- Applying the transformation tables
-                  . map (lookup' (tables!!5))
-                  . map (lookup' (tables!!4))
-                  . map (lookup' (tables!!3))
-                  . map (lookup' (tables!!2))
-                  . map (lookup' (tables!!1))
-                  . map (lookup' (tables!!0))
+    let locations = map (lookup1 (tables!!6))    -- Applying the transformation tables
+                  . map (lookup1 (tables!!5))
+                  . map (lookup1 (tables!!4))
+                  . map (lookup1 (tables!!3))
+                  . map (lookup1 (tables!!2))
+                  . map (lookup1 (tables!!1))
+                  . map (lookup1 (tables!!0))
                   $ seeds
 
 
