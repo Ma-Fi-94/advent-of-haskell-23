@@ -1,66 +1,87 @@
 import Utils (readInteger, tok, at, groupn)
 import Data.List (sort)
-import Debug.Trace (trace)
+
 
 -- A ClosedInterval datatype plus some convenience functions
-type ClosedInterval = (Integer, Integer)
-(a, b) `containedIn` (c, d) = (a >= c) && (b <= d)
-(a, b) `cutsInto` (c, _)    = (a < c) && (b >= c)
+type ClosedInterval  = (Integer, Integer)
+(a, b) `isin` (c, d) = (a >= c) && (b <= d)
+(a, b) `cuts` (c, _) = (a < c)  && (b >= c)
 
 
 -- Sugar
-type Rule           = (ClosedInterval, ClosedInterval)
-type Table          = [Rule]
-
-
--- Parse a rule (line of three numbers) from the input text
-parseRule :: String -> Rule
-parseRule str = ((src, src+len-1), (dst, dst+len-1))
-  where
-    (dst, src, len) = (numbers !! 0, numbers !! 1, numbers !! 2)
-    numbers         = map readInteger . tok " " $ str
+type Rule  = (ClosedInterval, ClosedInterval)
+type Table = [Rule]
 
 
 -- Extract seed numbers from the first line of input text
 getSeeds :: [String] -> [ClosedInterval]
-getSeeds = map (\xs -> (xs!!0, (xs!!0) + (xs!!1) - 1))
+getSeeds = map tuplify
          . groupn 2
          . map readInteger
          . tok " "
          . at 1
          . tok ":"
-         . at 0
+         . head
+  where
+    tuplify xs = (xs!!0, (xs!!0) + (xs!!1) - 1)
+
+
+-- Extract tables from input text
+getTables :: [String] -> [Table]
+getTables = map (map parseRule)
+          . map tail 
+          . tok [""]
+          . drop 2
+
+
+-- Parse a rule (line of three numbers) from the input text
+parseRule :: String -> Rule
+parseRule str = (domain, image) 
+  where
+    domain  = (src, src + len - 1)
+    image   = (dst, dst + len - 1)
+    dst     = tokens !! 0
+    src     = tokens !! 1
+    len     = tokens !! 2
+    tokens  = map readInteger . tok " " $ str
 
 
 -- Apply a transformation rule to a ClosedInterval.
 -- The interval needs to be entirely contained in the
--- source interval of the transformation rule.
+-- domain of the transformation rule.
 apply :: Rule -> ClosedInterval -> ClosedInterval
-apply r@((u, v), (w, _)) i@(a, b)
-    |(a, b) `containedIn` (u, v) = (a + w - u, b + w - u)
-    |otherwise                   = error "Interval not entirely contained."
+apply ((u, v), (w, _)) (a, b)
+    |(a, b) `isin` (u, v) = (a + w - u, b + w - u)
+    |otherwise            = error "Rule not applicable."
 
 
--- Transform based on a Table a given ClosedInterval
+-- Transform, based on a table of Rule-s, a given ClosedInterval
 -- This will produce one or more new ClosedInterval-s
 transform :: Table -> ClosedInterval -> [ClosedInterval]
-transform rules interval@(a,b)
-    |any (interval `containedIn`) (map fst rules) = [apply containsRule interval]
-    |any (`cutsInto` interval) (map fst rules)    = transform rules left1 ++ transform rules right1
-    |any (interval `cutsInto`) (map fst rules)    = transform rules left2 ++ transform rules right2
-    |otherwise                                    = [interval] 
+transform t (a,b)
+    |rulesContain /= [] = [apply (head rulesContain) (a,b)]
+    |rulesLeft    /= [] = transform t left1 ++ transform t right1
+    |rulesRight   /= [] = transform t left2 ++ transform t right2
+    |otherwise          = [(a,b)] 
   where
-    containsRule = head . filter ((interval `containedIn`) . fst) $ rules
+    -- Three possible cases:
+    rulesContain = filter (((a,b) `isin`) . fst) $ t
+    rulesLeft    = filter ((`cuts` (a,b)) . fst) $ t
+    rulesRight   = filter (((a,b) `cuts`) . fst) $ t
 
-    cutsRule1    = head . filter ((`cutsInto` interval) . fst) $ rules
-    left1        = (a, x1)
-    right1       = (x1+1, b)
-    x1           = snd $ fst cutsRule1
+    -- Case 0: Interval falls entirely into the domain of a rule.
+    -- Nothing more to do.
 
-    cutsRule2    = head . filter ((interval `cutsInto`) . fst) $ rules
-    left2        = (a, x2-1)
-    right2       = (x2, b)
-    x2           = fst $ fst cutsRule2
+    -- Case 1: A rule cuts the interval from the left
+    left1        = (a, cut1)
+    right1       = (cut1+1, b)
+    cut1         = snd . fst . head $ rulesLeft
+
+    -- Case 2: A rule cuts the interval from the right
+    left2        = (a, cut2-1)
+    right2       = (cut2, b)
+    cut2         = fst . fst . head $ rulesRight
+
 
 -------------
 -- Answers --
@@ -68,14 +89,8 @@ transform rules interval@(a,b)
 
 main = do
     filecontents <- readFile "input.txt"
-
     let seeds = getSeeds . lines $ filecontents
-
-    let tables = map (map parseRule)
-               . map tail 
-               . tok [""]
-               . drop 2
-               . lines $ filecontents
+    let tables = getTables . lines $ filecontents
 
     print $ minimum
           . map fst
