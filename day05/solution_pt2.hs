@@ -1,5 +1,4 @@
-import Utils (readInteger, tok, at, groupn)
-import Data.List (sort)
+import Utils (readInteger, tok, at, groupn) 
 
 
 -- A ClosedInterval datatype plus some convenience functions
