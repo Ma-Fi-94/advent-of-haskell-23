@@ -47,12 +47,7 @@ parseInput2 xs = (t, d)
   where
     t         = parseLine (xs!!0)
     d         = parseLine (xs!!1)
-    parseLine = readInt . strip . at 1 . tok ":"
-    strip [] = []
-    strip (x:xs)
-        |x == ' '  = strip xs
-        |otherwise = x : strip xs
-    
+    parseLine = readInt . filter (/=' ') . at 1 . tok ":"
 
 -------------
 -- Answers --
