@@ -6,6 +6,7 @@ module Utils where
 
 readInt     = (read :: String -> Int)
 readInteger = (read :: String -> Integer)
+readDouble  = (read :: String -> Double)
 
 
 -----------

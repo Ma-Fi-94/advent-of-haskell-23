@@ -1,10 +1,10 @@
-import Utils (tok, at, readInt)
+import Utils (tok, at, readDouble)
 
 -----------
 -- Sugar --
 -----------
 
-type Race = (Int, Int)
+type Race = (Double, Double)
 
 -----------
 -- Both --
@@ -12,17 +12,14 @@ type Race = (Int, Int)
 
 -- Given allowed time and the length of the race,
 -- we calculate the number of possible ways to win.
--- We use the fact that s(x) is an inverted parabola,
--- which implies there's only one region of valid solutions.
--- For extra performance, we could also use the quadratic formula,
--- to analytically find the two points of intersection.
+-- For extra performance, we use the quadratic formula,
+-- to directly find the two points of intersection.
 nbSols :: Race -> Int
-nbSols (t,d) = length 
-             . takeWhile (>d) 
-             . dropWhile (<=d)
-             $ map s [0..t]
+nbSols (t,d) = x1 - x2 + 1
   where
-    s x = (t-x) * x
+    -- We want at least (d+1) units of length here, not d.
+    x1 = floor   $ (t/2) + sqrt (t^2/4 - (d+1))
+    x2 = ceiling $ (t/2) - sqrt (t^2/4 - (d+1))
 
 ------------
 -- Part 1 --
@@ -34,7 +31,7 @@ parseInput1 xs = zip ts ds
   where
     ts        = parseLine (xs!!0)
     ds        = parseLine (xs!!1)
-    parseLine = map readInt . tok " " . at 1 . tok ":"
+    parseLine = map readDouble . tok " " . at 1 . tok ":"
 
 
 ------------
@@ -47,7 +44,7 @@ parseInput2 xs = (t, d)
   where
     t         = parseLine (xs!!0)
     d         = parseLine (xs!!1)
-    parseLine = readInt . filter (/=' ') . at 1 . tok ":"
+    parseLine = readDouble . filter (/=' ') . at 1 . tok ":"
 
 -------------
 -- Answers --
