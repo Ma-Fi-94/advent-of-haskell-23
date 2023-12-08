@@ -1,5 +1,6 @@
 import           Data.Map (Map)
 import qualified Data.Map as Map
+import Debug.Trace
 
 -----------
 -- Sugar --
@@ -34,22 +35,30 @@ getMap = Map.fromList . map parseLine . drop 2
         right = take 3 . drop 12 $ cs
 
 
+-- Extract all starting nodes, i.e. nodes with a name ending on A,
+-- from the input file
+getStarts :: [String] -> [String]
+getStarts = filter (\s -> last s == 'A') . map (take 3) . drop 2
+
+
 -- Given a map, a nodename and a direction, return the name of the next node.
-step :: Map String (String, String) -> String -> Direction -> String
-step nodemap nodename dir = nodename'
+step :: Map String (String, String) -> Direction -> String -> String
+step nodemap d nodename = nodename'
   where
     nodename'
-        |dir == L  = fst (nodemap Map.! nodename)
-        |dir == R  = snd (nodemap Map.! nodename)
+        |d == L  = fst (nodemap Map.! nodename)
+        |d == R  = snd (nodemap Map.! nodename)
 
 
--- Count steps until we reach node "ZZZ", given a nodemap, a starting node, and
+-- Count steps until we reach an end node , given a nodemap, a starting node, and
 -- a list of directions to follow.
-countSteps :: Map String (String, String) -> String -> [Direction] -> Int
-countSteps _ "ZZZ" _               = 0
-countSteps nodemap nodename (d:ds) = 1 + countSteps nodemap nodename' ds
+countSteps :: Map String (String, String) -> [Direction] -> String -> Int
+countSteps nodemap (d:ds) nodename 
+    |isEnd nodename = 0
+    |otherwise      = 1 + countSteps nodemap ds nodename'
   where
-    nodename' = step nodemap nodename d 
+    isEnd     = (=='Z') . last
+    nodename' = step nodemap d nodename
 
 
 -------------
@@ -61,7 +70,13 @@ main = do
 
     let directions = cycle . getDirections . lines $ filecontents
     let nodemap    = getMap . lines $ filecontents
-    print $ countSteps nodemap "AAA" directions 
+    let starts     = getStarts . lines $ filecontents
 
+    -- For every starting node, we calculate the number of steps needed
+    -- to reach an end node.
+    -- We assume that all paths are cyclic and only touch exactly one
+    -- end node. Hence, we just have to find the LCM of the list of
+    -- steps required for each node.
+    print $ foldl1 lcm $ map (countSteps nodemap directions) starts
 
     print $ "---------- Done. ----------"
