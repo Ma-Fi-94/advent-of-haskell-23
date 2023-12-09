@@ -1,4 +1,4 @@
-import Utils (readInteger, tok)
+import Utils (tok)
 
 ---------------
 -- Functions --
@@ -6,7 +6,7 @@ import Utils (readInteger, tok)
 
 -- Parse a line of blank-seperated integers
 parseLine :: String -> [Integer]
-parseLine = map readInteger . tok " "
+parseLine = map read . tok " "
 
 
 -- Calculate iteratively the differences between subsequent numbers,
@@ -20,11 +20,12 @@ diffs = takeWhile (any (/=0)) . iterate diff
 
 -- The actual prediction of the next element of a given list.
 -- We calculate the lists of differences, reverse it, and then
--- step through them, filling in and carrying over the respective last element.
+-- step through it.
+-- At every step, we complete the current list by adding the
+-- current carryover value to the last list value, and this
+-- sum then becomes the new carryover value.
 predictNext :: (Num a, Eq a) => [a] -> a
-predictNext = foldl step 0 . reverse . diffs 
-  where
-    step delta xs = delta + (last xs)
+predictNext = foldr ((+) . last) 0 . reverse . diffs
 
 
 -------------
