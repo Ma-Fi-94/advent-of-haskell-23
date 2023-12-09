@@ -9,15 +9,41 @@ readInteger = (read :: String -> Integer)
 readDouble  = (read :: String -> Double)
 
 
+------------------
+-- Arrow things --
+------------------
+
+-- Apply function to the first element of a 2-tuple
+first :: (a -> c) -> (a, b) -> (c, b)
+first = \f (x, y) -> (f x, y)
+
+
+-- Apply funcion to the second element of a 2-tuple
+second :: (b -> c) -> (a, b) -> (a, c)
+second = \f (x, y) -> (x, f y)
+
+
+-- Fanout for functions
+(&&&) :: (a -> b) -> (a -> c) -> a -> (b, c)
+(&&&) = \f g x -> (f x, g x)
+
+
+-- Split for functions
+(***) :: (a -> c) -> (b -> d) -> (a, b) -> (c, d)
+(***) = \f g (x, y) -> (f x, g y)
+
+
 -----------
 -- Lists --
 -----------
+
 
 -- Takes a list and groups it into sublists of length n.
 -- The last sublist will be shorter if input is not divisible without rest.
 groupn :: Int -> [a] -> [[a]]
 groupn _ [] = []
 groupn n xs = (take n xs) : (groupn n (drop n xs))
+
 
 -- Like !!, but order of operands is saner
 at :: Int -> [a] -> a
@@ -40,10 +66,7 @@ tok delims input@(x:xs)
 
 -- Replace all occurences of a list item
 repl :: Eq a => a -> a -> [a] -> [a]
-repl _ _ [] = []
-repl old new (x:xs) = x' : (repl old new xs)
-  where
-    x' = if (x /= old) then x else new
+repl old new = map (\x -> if x /= old then x else new)
 
 
 -- First argument is the prefix to be checked
@@ -57,4 +80,11 @@ beginsWith (x:xs) (y:ys) = (x == y) && beginsWith xs ys
 endsWith :: Eq a => [a] -> [a] -> Bool
 endsWith x y = beginsWith (reverse x) (reverse y)
 
+
+-- First argument is the infix to be checked
+contains :: Eq a => [a] -> [a] -> Bool
+contains x [] = False
+contains x y
+    |beginsWith x y = True
+    |otherwise      = contains x (tail y)
 
