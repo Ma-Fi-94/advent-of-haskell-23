@@ -15,8 +15,7 @@ parseLine = map readInteger . tok " "
 diffsRev :: (Num a, Eq a) => [a] -> [[a]]
 diffsRev = reverse . takeWhile (any (/=0)) . iterate diff
   where
-    diff (x:[])   = []
-    diff (x:y:ys) = (y-x) : diff (y:ys)
+    diff xs = zipWith (-) (tail xs) (init xs)
 
 
 -- The actual prediction of the next element of a given list.
