@@ -1,5 +1,7 @@
 module Utils where
 
+import Data.Maybe
+
 -----------
 -- Sugar --
 -----------
@@ -36,6 +38,15 @@ second = \f (x, y) -> (x, f y)
 -----------
 -- Lists --
 -----------
+
+-- This should actually be present in the base lib, but isn't.
+-- Total version of !!.
+(!?) :: [a] -> Int -> Maybe a
+{-# INLINABLE (!?) #-}
+xs !? n
+    |n < length xs = Just (xs !! n)
+    |otherwise     = Nothing 
+
 
 -- Takes a list and groups it into sublists of length n.
 -- The last sublist will be shorter if input is not divisible without rest.
