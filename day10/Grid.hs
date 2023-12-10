@@ -5,6 +5,17 @@ import qualified Data.List as DL
 
 data Grid a = Grid Int Int [[a]] deriving Show
 
+
+-- Make a Grid from a given list.
+-- This is for convenience, and to check if the list of lists is well-formed.
+grid :: [[a]] -> Grid a
+grid xs
+    |wellformed xs = Grid (length xs) (length (xs!!0)) xs
+    |otherwise     = error "Grid.grid: Malformed input."
+  where
+    wellformed ls = all (==length (ls!!0)) (map length ls)
+
+
 -- Transposes an n*k grid to the corresponding k*n grid.
 transpose :: Grid a -> Grid a
 transpose (Grid n k xs) = Grid k n (DL.transpose xs)
