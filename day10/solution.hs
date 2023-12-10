@@ -1,8 +1,9 @@
 {-# LANGUAGE LambdaCase #-}
 
-import Grid
+import Grid 
 import Data.List (findIndex, elemIndex, intersect)
 import Data.Maybe
+import Utils (first, second)
 
 -----------
 -- Sugar --
@@ -40,20 +41,21 @@ findStart (Grid _ _ xs) = (i, j)
 -- Since it's irrelevant which we take, we'll just
 -- take the first one we find (LTR-TTB).
 findFirstCell :: Grid Char -> Coord -> Coord
-findFirstCell g (i, j)
-    |uncurry (cell g) n `elem` "|7F" = n
-    |uncurry (cell g) w `elem` "-LF" = w
-    |uncurry (cell g) e `elem` "-J7" = e
-    |uncurry (cell g) s `elem` "|LJ" = s
+findFirstCell g c
+    |ucell g n `elem` "|7F" = n
+    |ucell g w `elem` "-LF" = w
+    |ucell g e `elem` "-J7" = e
+    |ucell g s `elem` "|LJ" = s
   where
-    (n, s) = ((i-1, j), (i+1, j))
-    (w, e) = ((i, j-1), (i, j+1))
-
+    n = first pred $ c
+    s = first succ $ c
+    w = second pred $ c
+    e = second succ $ c
 
 -- Find all possible next coordinates,
 -- given the current Coord and a direction.
 nexts :: Coord -> Char -> [Coord]
-nexts (i, j) = \case
+nexts c = \case
     '|' -> [n, s]
     '-' -> [e, w]
     'L' -> [n, e]
@@ -62,8 +64,10 @@ nexts (i, j) = \case
     'F' -> [s, e]
     _   -> []
   where
-    (n, s) = ((i-1, j), (i+1, j))
-    (w, e) = ((i, j-1), (i, j+1))
+    n = first pred $ c
+    s = first succ $ c
+    w = second pred $ c
+    e = second succ $ c
 
 
 -- Given a Grid and a history of previously visited
@@ -76,12 +80,12 @@ nexts (i, j) = \case
 -- When we reach 'S', the will be no places to go,
 -- so we stop.
 walk :: Grid Char -> [Coord] -> [Coord]
-walk g history
+walk grid history
     |length nextCoords == 0 = history
-    |otherwise              = walk g (history ++ [head nextCoords])
+    |otherwise              = walk grid (history ++ [head nextCoords])
   where
     currentCoord    = last history
-    currentSymb     = uncurry (cell g) currentCoord
+    currentSymb     = uncurry (cell grid) currentCoord
     candidateCoords = nexts currentCoord currentSymb
 
     lastCoord       = last . init $ history
@@ -91,14 +95,15 @@ walk g history
 -- Part 2 only --
 -----------------
 
--- Apply the Trapezoid rule to a list of coordinates.
+-- Apply the Trapezoid rule to a list of coordinates,
+-- to get the area of the polygon.
 -- We do not have to filter out non-vertices, since they
 -- will lead to zero-summands anyway.
 -- We do need to use `abs` as the sum might be negative.
 -- We copy the first coordinate at the end of the list,
 -- to make stuff easier.
-trapezoid :: [Coord] -> Int
-trapezoid cs = abs . (`div` 2) . sumOfProducts $ (cs++[head cs])
+area :: [Coord] -> Int
+area cs = abs . (`div` 2) . sumOfProducts $ (cs++[head cs])
   where
     sumOfProducts (_:[])                  = 0
     sumOfProducts ((y1,x1):c2@(y2,x2):cs) = p + sumOfProducts (c2:cs)
@@ -134,7 +139,7 @@ main = do
 
     -- To determine a, we use the Trapezoid formula, which states:
     -- a = | 0.5 * \sum_{i=1}^n (y_i+y_{i+1})(x_i-x_{i+1}) |
-    let a = trapezoid . init . walk grid $ history
+    let a = area . init . walk grid $ history
 
     -- Number of integer-coordinate points on the border
     let b = (subtract 1) . length . walk grid $ history

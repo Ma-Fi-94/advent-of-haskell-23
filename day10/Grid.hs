@@ -31,6 +31,9 @@ cell (Grid n k xs) i j
     |otherwise      = error "Grid.cell: Out of bounds." 
 
 
+-- Uncurried version of cell, to operate on 2-tuples
+ucell g = uncurry (cell g)
+
 -- Like 'cell', but returns either 'Just a', or Nothing when OOB.
 cellMaybe :: Grid a -> Int -> Int -> Maybe a
 cellMaybe (Grid n k xs) i j 
