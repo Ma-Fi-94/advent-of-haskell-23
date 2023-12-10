@@ -42,10 +42,9 @@ second = \f (x, y) -> (x, f y)
 -- This should actually be present in the base lib, but isn't.
 -- Total version of !!.
 (!?) :: [a] -> Int -> Maybe a
-{-# INLINABLE (!?) #-}
-xs !? n
-    |n < length xs = Just (xs !! n)
-    |otherwise     = Nothing 
+[] !? n     = Nothing
+(x:_) !? 0  = Just x
+(_:xs) !? n = xs !? (n-1)
 
 
 -- Takes a list and groups it into sublists of length n.
@@ -53,11 +52,6 @@ xs !? n
 groupn :: Int -> [a] -> [[a]]
 groupn _ [] = []
 groupn n xs = (take n xs) : (groupn n (drop n xs))
-
-
--- Like !!, but order of operands is saner
-at :: Int -> [a] -> a
-at n list = list !! n
 
 
 -- Tokenise an array into a list of arrays based on delimiters
