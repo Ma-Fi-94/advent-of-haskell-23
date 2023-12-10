@@ -100,10 +100,9 @@ walk grid history
 -- We do not have to filter out non-vertices, since they
 -- will lead to zero-summands anyway.
 -- We do need to use `abs` as the sum might be negative.
--- We copy the first coordinate at the end of the list,
--- to make stuff easier.
+-- We need the first coordinate appear at the end of the list.
 area :: [Coord] -> Int
-area cs = abs . (`div` 2) . sumOfProducts $ (cs++[head cs])
+area cs = abs . (`div` 2) . sumOfProducts $ cs
   where
     sumOfProducts (_:[])                  = 0
     sumOfProducts ((y1,x1):c2@(y2,x2):cs) = p + sumOfProducts (c2:cs)
@@ -124,8 +123,12 @@ main = do
     ------------
     -- Part 1 --
     ------------
+    
+    -- Walk the path, getting all coordinates of the boundary
+    let boundary = walk grid $ history
 
-    print $ (`div` 2) . (subtract 1) . length . walk grid $ history
+    -- Answer to part 1 is just (l-1)/2
+    print $ (`div` 2) . (subtract 1) . length $ boundary
 
     ------------
     -- Part 2 --
@@ -139,10 +142,10 @@ main = do
 
     -- To determine a, we use the Trapezoid formula, which states:
     -- a = | 0.5 * \sum_{i=1}^n (y_i+y_{i+1})(x_i-x_{i+1}) |
-    let a = area . init . walk grid $ history
+    let a = area $ boundary
 
     -- Number of integer-coordinate points on the border
-    let b = (subtract 1) . length . walk grid $ history
+    let b = (length boundary) - 1
 
     -- Application of Pick's Theorem, as described above.
     print $ a - (b `div` 2) + 1
