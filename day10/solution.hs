@@ -46,10 +46,8 @@ findFirstCell g (i, j)
     |uncurry (cell g) e `elem` "-J7" = e
     |uncurry (cell g) s `elem` "|LJ" = s
   where
-    n = (i-1, j)
-    w = (i, j-1)
-    e = (i, j+1)
-    s = (i+1, j)
+    (n, s) = ((i-1, j), (i+1, j))
+    (w, e) = ((i, j-1), (i, j+1))
 
 
 -- Find all possible next coordinates,
@@ -64,11 +62,8 @@ nexts (i, j) = \case
     'F' -> [s, e]
     _   -> []
   where
-    n = (i-1, j)
-    w = (i, j-1)
-    e = (i, j+1)
-    s = (i+1, j)
-
+    (n, s) = ((i-1, j), (i+1, j))
+    (w, e) = ((i, j-1), (i, j+1))
 
 
 -- Given a Grid and a history of previously visited
@@ -92,19 +87,59 @@ walk g history
     lastCoord       = last . init $ history
     nextCoords      = filter (/=lastCoord) candidateCoords
 
+-----------------
+-- Part 2 only --
+-----------------
+
+-- Apply the Trapezoid rule to a list of coordinates.
+-- We do not have to filter out non-vertices, since they
+-- will lead to zero-summands anyway.
+-- We do need to use `abs` as the sum might be negative.
+-- We copy the first coordinate at the end of the list,
+-- to make stuff easier.
+trapezoid :: [Coord] -> Int
+trapezoid cs = abs . (`div` 2) . sumOfProducts $ (cs++[head cs])
+  where
+    sumOfProducts (_:[])                  = 0
+    sumOfProducts ((y1,x1):c2@(y2,x2):cs) = p + sumOfProducts (c2:cs)
+      where
+        p = (y1 + y2) * (x1 - x2)
+
 -------------
 -- Answers --
 -------------
 
 main = do
     filecontents <- readFile "input.txt"
-
     let grid      = makeGrid . lines $ filecontents
-
     let startCell = findStart grid
     let firstCell = findFirstCell grid startCell
     let history   = [startCell, firstCell]
 
+    ------------
+    -- Part 1 --
+    ------------
+
     print $ (`div` 2) . (subtract 1) . length . walk grid $ history
+
+    ------------
+    -- Part 2 --
+    ------------
+
+    -- We will use Pick's Theorem, which relates
+    -- * the area 'a' of a simple polygon with integer-coordinate vertices to
+    -- * the number 'b' of points with integer coordinates on the boundary and
+    -- * the number 'i' of points with integer coordinates within it.
+    -- It holds: a = i + (b/2) - 1, hence i = a - (b/2) + 1.
+
+    -- To determine a, we use the Trapezoid formula, which states:
+    -- a = | 0.5 * \sum_{i=1}^n (y_i+y_{i+1})(x_i-x_{i+1}) |
+    let a = trapezoid . init . walk grid $ history
+
+    -- Number of integer-coordinate points on the border
+    let b = (subtract 1) . length . walk grid $ history
+
+    -- Application of Pick's Theorem, as described above.
+    print $ a - (b `div` 2) + 1
 
     print $ "---------- Done. ----------"
