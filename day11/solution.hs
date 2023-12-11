@@ -1,6 +1,6 @@
-{-# LANGUAGE LambdaCase #-}
-
 import Data.List (elemIndices, (\\), sortOn)
+
+
 -----------
 -- Sugar --
 -----------
@@ -49,6 +49,13 @@ expandN n = transpose . expandRowsN n . transpose . expandRowsN n
     transpose = sortOn fst . map (\(x,y) -> (y,x))
 
 
+-- All non-trivial pairs of the elements of a list
+pairs :: Eq a => [a] -> [(a,a)]
+pairs xs = [(x1, x2) | x1 <- xs,
+                       x2 <- xs,
+                       x1 /= x2]
+
+
 -------------
 -- Answers --
 -------------
@@ -62,21 +69,13 @@ main = do
     -- Part 1 --
     ------------
 
-    let coords1 = expandN 1 coords
-    let pairs1  = [(c1, c2) | c1 <- coords1,
-                              c2 <- coords1,
-                              c1 /= c2]
-    print $ (`div` 2) . sum . map cab $ pairs1
+    print $ (`div` 2) . sum . map cab . pairs . expandN 1 $ coords
 
     ------------
     -- Part 2 --
     ------------
 
+    print $ (`div` 2) . sum . map cab . pairs . expandN (1000000-1) $ coords
 
-    let coords2 = expandN (1000000-1) coords
-    let pairs2  = [(c1, c2) | c1 <- coords2,
-                              c2 <- coords2,
-                              c1 /= c2]
-    print $ (`div` 2) . sum . map cab $ pairs2
 
     print $ "---------- Done. ----------"
