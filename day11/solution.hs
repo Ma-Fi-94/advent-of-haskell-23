@@ -24,6 +24,14 @@ lines2coords = go 0
     go i (l:ls) = (map (\c -> (i,c)) (elemIndices '#' l)) ++ go (i+1) ls
 
 
+-- Expand along both axes by applying expandRows on the grid
+-- and afterwards on the transposed (and sorted) grid again.
+expandN :: Int -> [Coord] -> [Coord]
+expandN n = transpose . expandRowsN n . transpose . expandRowsN n
+  where
+    transpose = sortOn fst . map (\(x,y) -> (y,x))
+
+
 -- Expand the "grid" row-wise by adding in 'n' new rows per empty row.
 expandRowsN :: Int -> [Coord] -> [Coord]
 expandRowsN n = go 0 0
@@ -33,17 +41,9 @@ expandRowsN n = go 0 0
                            then                 go (idx+1) (offset+n) coords
                            else currentLine' ++ go (idx+1) offset     coords'
       where
-        currentLine  = filter (\(x, _) -> x == idx) coords
+        currentLine  = filter ((== idx) . fst) coords
         currentLine' = map (\(x, y) -> (x + offset, y)) currentLine
         coords'      = coords \\ currentLine
-
-
--- Expand along both axes by applying expandRows on the grid
--- and afterwards on the transposed (and sorted) grid again.
-expandN :: Int -> [Coord] -> [Coord]
-expandN n = transpose . expandRowsN n . transpose . expandRowsN n
-  where
-    transpose = sortOn fst . map (\(x,y) -> (y,x))
 
 
 -------------
