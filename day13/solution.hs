@@ -1,37 +1,10 @@
 import Data.List (transpose)
-import Utils (tok, (&&&), second)
-import Debug.Trace (trace)
-
------------- 
--- Part 1 --
-------------
-
--- Check whether a given row is symmetric about the given position.
-isSymmAt :: Eq a => Int -> [a] -> Bool
-isSymmAt i xs = allSame (zip (reverse left) right)
-  where
-   allSame       = all (uncurry (==))
-   (left, right) = (take i xs, drop i xs)
- 
- 
--- Find the symmetry column of a block of lines
-findSymmCol :: Eq a => [[a]] -> Int
-findSymmCol ls = go 1
-  where
-    go i
-        |i == (length (ls!!0)) = 0
-        |all (isSymmAt i) ls   = i
-        |otherwise             = go (i+1)
- 
- 
--- Find the symmetry row of a block of lines
-findSymmRow :: Eq a => [[a]] -> Int
-findSymmRow = findSymmCol . transpose
+import Utils (tok, (&&&))
 
 
------------- 
--- Part 2 --
-------------
+----------
+-- Both --
+----------
 
 -- Count the number of mismatches if we try to mirror a list
 -- after the specified element.
@@ -42,6 +15,24 @@ countMismatchesAt i xs = length
   where
    (left, right) = (take i xs, drop i xs)
 
+
+------------ 
+-- Part 1 --
+------------
+ 
+-- Find the symmetry column of a block of lines
+findSymmCol :: Eq a => [[a]] -> Int
+findSymmCol ls = go 1
+  where
+    go i
+        |i == (length (ls!!0))                    = 0
+        |all (==0) $ map (countMismatchesAt i) ls = i
+        |otherwise                                = go (i+1)
+ 
+
+------------ 
+-- Part 2 --
+------------
 
 -- Now we want to find the column, around which the table
 -- is symmetric except for exactly one mismatch (the "smudge")
@@ -59,9 +50,6 @@ findSymmCol2 ls = go 1
         nbsMism  = map (countMismatchesAt i) ls
 
 
-findSymmRow2 :: Eq a => [[a]] -> Int
-findSymmRow2 = findSymmCol2 . transpose
-
 -- Answers
 main = do
   
@@ -69,19 +57,16 @@ main = do
     let blocks = tok [""] . lines $ filecontents
 
     -- Part 1
-    --print $ sum
-    --      . map (\(u, v) -> u + v)
-    --      . map (second (*100))
-    --      . map ((&&&) findSymmCol findSymmRow)
-    --      $ blocks
+    print $ sum
+          . map (uncurry (+))
+          . map ((&&&) findSymmCol ((*100) . findSymmCol . transpose))
+          $ blocks
     
     -- Part 2
     print $ sum
-          . map (\(u, v) -> u + v)
-          . map (second (*100))
-          . map ((&&&) findSymmCol2 findSymmRow2)
+          . map (uncurry (+))
+          . map ((&&&) findSymmCol ((*100) . findSymmCol . transpose))
           $ blocks
 
-    
 
     print $ "---------- Done. ----------"
