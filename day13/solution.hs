@@ -16,6 +16,11 @@ countMismatchesAt i xs = length
    (left, right) = (take i xs, drop i xs)
 
 
+-- Analyse a Char block, given a "symmetry-finding function" to apply.
+solveBlock :: Eq a => ([[a]] -> Int) -> [[a]] -> Int
+solveBlock f = uncurry (+) . (&&&) f ((*100) . f. transpose)
+
+
 ------------ 
 -- Part 1 --
 ------------
@@ -57,16 +62,9 @@ main = do
     let blocks = tok [""] . lines $ filecontents
 
     -- Part 1
-    print $ sum
-          . map (uncurry (+))
-          . map ((&&&) findSymmCol ((*100) . findSymmCol . transpose))
-          $ blocks
+    print $ sum . map (solveBlock findSymmCol) $ blocks
     
     -- Part 2
-    print $ sum
-          . map (uncurry (+))
-          . map ((&&&) findSymmCol2 ((*100) . findSymmCol2 . transpose))
-          $ blocks
-
+    print $ sum . map (solveBlock findSymmCol2) $ blocks
 
     print $ "---------- Done. ----------"
