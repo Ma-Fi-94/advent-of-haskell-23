@@ -65,7 +65,7 @@ main = do
     -- Part 2
     print $ sum
           . map (uncurry (+))
-          . map ((&&&) findSymmCol ((*100) . findSymmCol . transpose))
+          . map ((&&&) findSymmCol2 ((*100) . findSymmCol2 . transpose))
           $ blocks
 
 
