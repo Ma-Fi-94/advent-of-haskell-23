@@ -1,6 +1,7 @@
 module Utils where
 
 import Data.Maybe
+import qualified Data.Map as Map
 
 -----------
 -- Sugar --
@@ -38,6 +39,17 @@ second = \f (x, y) -> (x, f y)
 -----------
 -- Lists --
 -----------
+
+-- Find the first recurring element and return
+-- the index of its first and its second occurrence
+firstRecElem :: Ord a => [a] -> Maybe (Int, Int)
+firstRecElem xs = go Map.empty 0 xs
+  where
+    go _ _ []        = Nothing
+    go seen i (x:xs) = case (Map.lookup x seen) of
+                             Just j  -> Just (j,i)
+                             Nothing -> go (Map.insert x i seen) (i+1) xs
+
 
 -- Cartesian product of two lists
 cart :: [a] -> [b] -> [(a,b)]

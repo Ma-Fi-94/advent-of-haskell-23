@@ -1,17 +1,14 @@
 {-# Language NumericUnderscores #-}
 
 import Data.List (transpose)
-import Data.Map qualified as Map
+import Utils (firstRecElem)
+import Data.Maybe (fromJust)
+
 
 ----------
 -- Both --
 ----------
 
-
-
------------- 
--- Part 1 --
-------------
 
 -- Move all round rocks of a line to the left as much as possible.
 moveLeft :: String -> String
@@ -26,16 +23,22 @@ moveLeft s@(c:cs)
         s'     = dropWhile (/='#') s
 
 
-tiltNorth :: [String] -> [String]
-tiltNorth = transpose . map moveLeft . transpose
-
-
 -- Calculate the load on the north support beams.
 load :: [String] -> Int
 load = sum
      . map (\(i, s) -> (*i) . length . filter (=='O') $ s)
      . zip [1..]
      . reverse
+
+
+------------ 
+-- Part 1 --
+------------
+
+
+tiltNorth :: [String] -> [String]
+tiltNorth = transpose . map moveLeft . transpose
+
 
 ------------ 
 -- Part 2 --
@@ -45,21 +48,9 @@ load = sum
 spin :: [String] -> [String]
 spin = tiltEast . tiltSouth . tiltWest . tiltNorth
   where
-    tiltSouth = transpose . tiltEast . transpose
     tiltWest  = map moveLeft
     tiltEast  = map (reverse . moveLeft . reverse)
-
-
--- Idea: We try to find a cycle. This function returns
--- the first and second index of the first duplicate found.
--- Taken from https://github.com/glguy/advent/blob/main/solutions/src/2023/14.hs
-findCycle :: Ord a => [a] -> (Int, Int)
-findCycle xs = go Map.empty 0 xs
-  where
-    go _ _ []        = error "No cycle found after checking entire list."
-    go seen i (x:xs) = case (Map.lookup x seen) of
-                             Just j  -> (j,i)
-                             Nothing -> go (Map.insert x i seen) (i+1) xs
+    tiltSouth = transpose . tiltEast . transpose
 
 
 -- Answers
@@ -69,13 +60,25 @@ main = do
     let grid = lines $ filecontents
 
 
-    -- Part 1
+    ------------
+    -- Part 1 --
+    ------------
+
     print $ load . tiltNorth $ grid
 
-    -- Part 2, assuming there's a cycle in it.
-    let outs          = iterate spin grid
-    let (start, next) = findCycle outs
-    let i             = start + (1_000_000_000 - start) `rem` (next - start)
+    ------------
+    -- Part 2 --
+    ------------
+    
+    -- We assume there's a cycle in it, so we
+    -- naively look for the first recurring element.
+    let steps    = iterate spin grid
+    let (i1, i2) = fromJust . firstRecElem $ outs
+
+    -- We assume the first recurring element denotes the cycle.
+    -- We skip over all complete cycles and just have to look
+    -- up the intermediate output at step i.
+    let i             = i1 + (1_000_000_000 - i1) `rem` (i2 - i1)
     print (load (outs !! i))
 
     print $ "---------- Done. ----------"
