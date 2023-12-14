@@ -73,12 +73,13 @@ main = do
     -- We assume there's a cycle in it, so we
     -- naively look for the first recurring element.
     let steps    = iterate spin grid
-    let (i1, i2) = fromJust . firstRecElem $ outs
+    let (i1, i2) = fromJust . firstRecElem $ steps
 
-    -- We assume the first recurring element denotes the cycle.
-    -- We skip over all complete cycles and just have to look
-    -- up the intermediate output at step i.
-    let i             = i1 + (1_000_000_000 - i1) `rem` (i2 - i1)
-    print (load (outs !! i))
+    -- Because 'spin' is a pure function, there needs
+    -- to be a cycle between 'i1' and 'i2' We skip over
+    -- all complete cycles and just have to loo up the
+    -- intermediate output at step i.
+    let i = i1 + (1_000_000_000 - i1) `rem` (i2 - i1)
+    print $ load $ (steps !! i)
 
     print $ "---------- Done. ----------"
