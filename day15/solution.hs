@@ -1,10 +1,5 @@
-import Utils (tok, readInt)
+import Utils (tok)
 import Data.Char (ord, isDigit)
-import Debug.Trace (trace)
-
-----------
--- Both --
-----------
 
 
 ------------ 
@@ -25,18 +20,16 @@ hash = go 0
 ------------
 
 -- Sugar. Give me sugar.
-type LensLabel     = String
-type BoxNb           = Int
+type Lens      = (LensLabel, FocLength)
+type LensLabel = String
+type FocLength = Int
 
-type Lens          = (LensLensLabel, FocLength)
-type LensLensLabel = String
-type FocLength     = Int
+data Command   = Remove CmdRemove | Add CmdAdd deriving Show
+type CmdRemove = (BoxNb, LensLabel)
+type CmdAdd    = (BoxNb, LensLabel, FocLength)
 
-data Command       = Remove CmdRemove | Add CmdAdd deriving Show
-type CmdRemove     = (BoxNb, LensLabel)
-type CmdAdd        = (BoxNb, LensLabel, FocLength)
-
-type Boxchain      = [[Lens]]
+type BoxNb     = Int
+type Boxchain  = [[Lens]]
 
 
 -- Parse an input string to a command.
@@ -44,11 +37,10 @@ parseCommand :: String -> Command
 parseCommand s
     |'-' `elem` s = Remove (box, label)
     |'=' `elem` s = Add    (box, label, focLen)
-    |otherwise    = error "solution.parseCommand: Parse failed."
       where
         label  = takeWhile (not . (`elem` "=-")) s
         box    = hash label
-        focLen = readInt $ dropWhile (not . isDigit) $ s
+        focLen = read $ dropWhile (not . isDigit) $ s
 
 
 -- Try to remove a lens, given by its label, from a specific box.
