@@ -53,7 +53,7 @@ firstRecElem xs = go Map.empty 0 xs
 
 -- Cartesian product of two lists
 cart :: [a] -> [b] -> [(a,b)]
-cart x y = [(u, v) | u <- x, v <- y]
+cart x y = (,) <$> x <*> y
 
 
 -- This should actually be present in the base lib, but isn't.
