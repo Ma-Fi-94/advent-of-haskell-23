@@ -1,78 +1,126 @@
 module Grid where
 
-import Data.Maybe
-import qualified Data.List as DL
+import qualified Data.Map as Map
+import Data.Map (Map)
+import Data.Maybe (catMaybes)
+import qualified Data.List as DL (transpose)
 
---------------------------------------------------------------------------
--- TODO: Change the internal implementation of this from a list of list --
--- to a Map (Int, Int) a, for O(1) accessing based on indices.          --
---------------------------------------------------------------------------
+type Coord = (Int, Int)
 
-
-data Grid a = Grid Int Int [[a]] deriving Show
+data Grid a = Grid Int Int (Map Coord a) deriving Show
 
 
--- Make a Grid from a given list.
--- This is for convenience, and to check if the list of lists is well-formed.
-grid :: [[a]] -> Grid a
-grid xs
-    |wellformed xs = Grid (length xs) (length (xs!!0)) xs
-    |otherwise     = error "Grid.grid: Malformed input."
-  where
-    wellformed ls = all (==length (ls!!0)) (map length ls)
+-- Make a Grid from a given list of lists.
+-- Checks whether input is wellformed.
+fromList :: [[a]] -> Grid a
+fromList ls
+    |wellformed = Grid h w m
+    |otherwise  = error "Grid.fromList: Malformed input."
+      where
+        wellformed = all (==length (ls!!0)) (map length ls)
+        (h, w)     = (length ls, length (ls!!0))
+        m          = Map.fromList $ zip idx (concat ls)
+        idx        = (,) <$> [0..h-1] <*> [0..w-1]
 
 
--- Transposes an n*k grid to the corresponding k*n grid.
+-- Return all elements list-of-lists style.
+toList :: Grid a -> [[a]]
+toList g@(Grid h _ _) = map (row g) [0..h-1]
+
+
+-- Transpose the Grid
 transpose :: Grid a -> Grid a
-transpose (Grid n k xs) = Grid k n (DL.transpose xs)
+transpose = fromList . DL.transpose . toList
 
 
--- Get the i-th row from the grid. Throws an error when OOB.
+-- Enumerate all elements as a list of 2-tuples (Coordinate, Element)
+enumerate :: Grid a -> [(Coord, a)]
+enumerate (Grid h w m) = zip idx $ map (m Map.!) idx
+  where
+    idx = (,) <$> [0..h-1] <*> [0..w-1]
+
+
+-- Get a Maybe row, specified by index. Returns Nothing if OOB.
+mbRow :: Grid a -> Int -> Maybe [a]
+mbRow (Grid h w m) i
+    |0 <= i && i < h = Just $ map (m Map.!) $ [(i, x) | x <- [0..w-1]]
+    |otherwise       = Nothing
+
+
+-- Get a Maybe column, specified by index. Returns Nothing if OOB.
+mbCol :: Grid a -> Int -> Maybe [a]
+mbCol (Grid h w m) i
+    |0 <= i && i < w = Just $ map (m Map.!) $ [(x, i) | x <- [0..h-1]]
+    |otherwise       = Nothing
+
+
+-- Get a Maybe cell, specified by a Coordinate tuple. Returns Nothing if OOB.
+mbCell :: Grid a -> Coord -> Maybe a
+mbCell (Grid h w m) (r, c)
+    |0 <= r && r < h && 0 <= c && c < w = Just $ m Map.! (r, c)
+    |otherwise                          = Nothing
+
+
+-- Change a given cell to a given value.
+-- Returns a Just Grid, or Nothing if OOB.
+mbSet :: Grid a -> Coord -> a -> Maybe (Grid a)
+mbSet (Grid h w m) (r, c) x
+    |0 <= r && r < h && 0 <= c && c < w = Just g'
+    |otherwise                          = Nothing
+      where
+        g' = Grid h w m'
+        m' = Map.insert (r, c) x m
+
+
+-- Get a row, specified by index. Throws error if OOB.
 row :: Grid a -> Int -> [a]
-row (Grid n k xs) i
-    |i < n     = xs !! i
-    |otherwise = error "Grid.row: Out of bounds."
+row g i = case mbRow g i of
+               Just x  -> x
+               Nothing -> error "Grid.row: Out of bounds."
 
 
--- Get the i-th column from the grid. Throws an error when OOB.
+-- Get a column, specified by index. Throws error if OOB.
 col :: Grid a -> Int -> [a]
-col g@(Grid n k xs) i
-    |i < k     = row (transpose g) i
-    |otherwise = error "Grid.col: Out of bounds."
+col g i = case mbCol g i of 
+               Just x  -> x
+               Nothing -> error "Grid.col: Out of bounds."
 
 
--- Get the element at (i,j). Throws an error when OOB.
-cell :: Grid a -> Int -> Int -> a
-cell (Grid n k xs) i j
-    |i < n && j < k = (xs!!i)!!j
-    |otherwise      = error "Grid.cell: Out of bounds." 
+-- Get a cell, specified by a Coordinate tuple. Throws error if OOB.
+cell :: Grid a -> Coord -> a
+cell g c = case mbCell g c of
+                Just x  -> x
+                Nothing -> error "Grid.cell: Out of bounds."
 
 
--- Uncurried version of cell, to operate on 2-tuples
-ucell g = uncurry (cell g)
+-- Change a given cell to a given value.
+-- Returns a Grid, or throws error if OOB.
+set :: Grid a -> Coord -> a -> Grid a
+set (Grid h w m) (r, c) x
+    |0 <= r && r < h && 0 <= c && c < w = g'
+    |otherwise                          = error "Grid.set: Out of bounds."
+      where
+        g' = Grid h w m'
+        m' = Map.insert (r, c) x m
 
--- Like 'cell', but returns either 'Just a', or Nothing when OOB.
-cellMaybe :: Grid a -> Int -> Int -> Maybe a
-cellMaybe (Grid n k xs) i j 
-    |i < n && j < k = Just ((xs !! i) !! j)
-    |otherwise      = Nothing
+
 
 -- Get the Moore neighbourhood of cell (i,j). Takes care of boundaries.
-moore :: Grid a -> Int -> Int -> [a]
-moore g i j = catMaybes neighbours
+moore :: Grid a -> Coord -> [a]
+moore g (i, j) = catMaybes neighbours
   where
     coords     = [(i-1, j-1), (i-1, j), (i-1, j+1),
                   (i, j-1),             (i, j+1),
                   (i+1, j-1), (i+1, j), (i+1, j+1)]
-    neighbours = map (uncurry (cellMaybe g)) coords
+    neighbours = map (mbCell g) coords
 
 
 -- Get the von Neumann neighbourhood of cell (i,j). Takes care of boundaries.
-vonNeum :: Grid a -> Int -> Int -> [a]
-vonNeum g i j = catMaybes neighbours
+vonNeum :: Grid a -> Coord -> [a]
+vonNeum g (i, j) = catMaybes neighbours
   where
-    coords     = [             (i-1, j),
-                  (i, j-1),             (i, j+1),
-                               (i+1, j)          ]
-    neighbours = map (uncurry (cellMaybe g)) coords
+    coords     = [          (i-1, j),
+                  (i, j-1),           (i, j+1),
+                            (i+1, j)          ]
+    neighbours = map (mbCell g) coords
 
