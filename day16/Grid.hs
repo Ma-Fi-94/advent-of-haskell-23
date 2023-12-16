@@ -2,7 +2,7 @@ module Grid where
 
 import qualified Data.Map as Map
 import Data.Map (Map)
-import Data.Maybe (catMaybes)
+import Data.Maybe (catMaybes, fromJust)
 import qualified Data.List as DL (transpose)
 
 type Coord = (Int, Int)
@@ -80,25 +80,19 @@ mbSet (Grid h w m) (r, c) x
         m' = Map.insert (r, c) x m
 
 
--- Get a row, specified by index. Throws error if OOB.
-row :: Grid a -> Int -> [a]
-row g i = case mbRow g i of
-               Just x  -> x
-               Nothing -> error "Grid.row: Out of bounds."
+-- A custom fromJust implementation, that allows to
+-- specify the error to be thrown in case of Nothing.
+-- This is from the partial versions of the mb* functions.
+fromJust' :: String -> Maybe a -> a
+fromJust' err mb = case mb of
+                        Just x  -> x
+                        Nothing -> error err
 
 
--- Get a column, specified by index. Throws error if OOB.
-col :: Grid a -> Int -> [a]
-col g i = case mbCol g i of 
-               Just x  -> x
-               Nothing -> error "Grid.col: Out of bounds."
-
-
--- Get a cell, specified by a Coordinate tuple. Throws error if OOB.
-cell :: Grid a -> Coord -> a
-cell g c = case mbCell g c of
-                Just x  -> x
-                Nothing -> error "Grid.cell: Out of bounds."
+-- Partial versions of the mb* functions, for convenience.
+row g i  = fromJust' "Grid.row: Out of bounds." $ mbRow g i
+col g i  = fromJust' "Grid.col: Out of bounds." $ mbCol g i
+cell g i = fromJust' "Grid.cell: Our of bounds." $ mbCell g i
 
 
 -- Change a given cell to a given value.
@@ -110,7 +104,6 @@ set (Grid h w m) (r, c) x
       where
         g' = Grid h w m'
         m' = Map.insert (r, c) x m
-
 
 
 -- Get the Moore neighbourhood of cell (i,j). Takes care of boundaries.
