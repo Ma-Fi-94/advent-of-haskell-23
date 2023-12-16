@@ -3,7 +3,6 @@ module Grid where
 import qualified Data.Map as Map
 import Data.Map (Map)
 import Data.Maybe (catMaybes, fromJust)
-import qualified Data.List as DL (transpose)
 
 type Coord = (Int, Int)
 
@@ -92,18 +91,8 @@ fromJust' err mb = case mb of
 -- Partial versions of the mb* functions, for convenience.
 row g i  = fromJust' "Grid.row: Out of bounds." $ mbRow g i
 col g i  = fromJust' "Grid.col: Out of bounds." $ mbCol g i
-cell g i = fromJust' "Grid.cell: Our of bounds." $ mbCell g i
-
-
--- Change a given cell to a given value.
--- Returns a Grid, or throws error if OOB.
-set :: Grid a -> Coord -> a -> Grid a
-set (Grid h w m) (r, c) x
-    |0 <= r && r < h && 0 <= c && c < w = g'
-    |otherwise                          = error "Grid.set: Out of bounds."
-      where
-        g' = Grid h w m'
-        m' = Map.insert (r, c) x m
+cell g i = fromJust' "Grid.cell: Out of bounds." $ mbCell g i
+set g c x = fromJust' "Grid.set: Out of bounds." $ mbSet g c x
 
 
 -- Get the Moore neighbourhood of cell (i,j). Takes care of boundaries.
