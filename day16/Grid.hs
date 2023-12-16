@@ -30,14 +30,22 @@ toList g@(Grid h _ _) = map (row g) [0..h-1]
 
 -- Transpose the Grid
 transpose :: Grid a -> Grid a
-transpose = fromList . DL.transpose . toList
+transpose (Grid h w m) = Grid h' w' m'
+  where
+    (h', w') = (w, h)
+    m'       = Map.mapKeys (\(r, c) -> (c, r)) m
+
+
+-- Reverse all rows of the Grid
+revRows :: Grid a -> Grid a
+revRows (Grid h w m) = Grid h w m'
+  where
+    m' = Map.mapKeys (\(r, c) -> (r, w - c - 1)) m
 
 
 -- Enumerate all elements as a list of 2-tuples (Coordinate, Element)
 enumerate :: Grid a -> [(Coord, a)]
-enumerate (Grid h w m) = zip idx $ map (m Map.!) idx
-  where
-    idx = (,) <$> [0..h-1] <*> [0..w-1]
+enumerate (Grid _ _ m) = Map.assocs m
 
 
 -- Get a Maybe row, specified by index. Returns Nothing if OOB.
