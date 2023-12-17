@@ -1,7 +1,7 @@
--- This is heavily based on the following repo:
+-- This is strongly based on the following repo:
 -- https://github.com/gruhn/advent-of-code/blob/master/2023/Day17.hs
--- I only did some minor editing and reformatting, and added comments
--- to aid my understanding, but all credit goes to the original solution.
+-- However, I did some editing and reformatting, and added some comments
+-- to aid my understanding; still all credit goes to the original solution.
 
 {-# LANGUAGE LambdaCase #-}
 
@@ -13,6 +13,8 @@ import Data.Char (digitToInt)
 import Data.Map (Map)
 import qualified Data.Map as Map
 import Data.Maybe (fromJust)
+
+import Debug.Trace
 
 -- Sugar
 type Pos = (Int, Int)
@@ -43,11 +45,7 @@ move pos i d = case d of
 
 -- Options to move after a step in a given direction
 moveOptions :: Dir -> [Dir]
-moveOptions = \case
-              N -> [W,E]
-              S -> [W,E]
-              W -> [N,S]
-              E -> [N,S]
+moveOptions = \case {N -> [W,E]; S -> [W,E]; W -> [N,S]; E -> [N,S]}
 
 
 -- Given to positions with nonzero distance, generate all coordinates
@@ -55,9 +53,12 @@ moveOptions = \case
 path :: Pos -> Pos -> [Pos]
 path (x1,y1) (x2,y2)
     |(x1,y1) == (x2,y2) = []
-    |otherwise          = pos : path pos (x2,y2)
+    |x1 == x2           = [(x1, y) | y <- tail (list y1 y2)]
+    |y1 == y2           = [(x, y1) | x <- tail (list x1 x2)]
       where
-        pos = (x1 + signum (x2-x1), y1 + signum (y2-y1))
+        list i j
+          |i < j = enumFromTo i j
+          |i > j = reverse $ enumFromTo j i
 
 
 shortestPath :: Map Pos Int -> [Int] -> Maybe Int
@@ -70,7 +71,7 @@ shortestPath grid stepRange = fst <$> dijkstra next cost isGoal ((0,0), [E,S])
 
       -- The cost function for moving between two states.
       -- Includes start point, excludes last point to prevent doublecounting.
-      cost (from, _) (to, _) = sum $ map (grid Map.!) $ path from to
+      cost (from, _) (to, _) = sum $ map (grid Map.!) (path from to)
 
       -- Given a State, find all possible next States
       next :: State -> [State]
@@ -82,6 +83,7 @@ shortestPath grid stepRange = fst <$> dijkstra next cost isGoal ((0,0), [E,S])
 
 
 main = do
+
   grid <- parseToMap . lines <$> readFile "input.txt"
 
   print $ fromJust $ shortestPath grid [1..3]
