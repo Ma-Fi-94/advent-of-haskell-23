@@ -8,7 +8,6 @@
 module Main where
 
 import Algorithm.Search (dijkstra)
-import Control.Monad (guard)
 import Control.Arrow (first, second)
 import Data.Char (digitToInt)
 import Data.Map (Map)
@@ -35,11 +34,11 @@ parseToMap ss = Map.fromList
 
 -- Move from a given position i steps into the given direction.
 move :: Pos -> Int -> Dir -> Pos
-move pos i = \case
-              N -> second (subtract i) pos
-              S -> second (+i) pos
-              W -> first (subtract i) pos
-              E -> first (+i) pos
+move pos i d = case d of
+                    N -> second (subtract i) pos
+                    S -> second (+i) pos
+                    W -> first (subtract i) pos
+                    E -> first (+i) pos
 
 
 -- Options to move after a step in a given direction
@@ -62,7 +61,7 @@ path (x1,y1) (x2,y2)
 
 
 shortestPath :: Map Pos Int -> [Int] -> Maybe Int
-shortestPath grid step_range = fst <$> dijkstra next cost isGoal ((0,0), [E,S])
+shortestPath grid stepRange = fst <$> dijkstra next cost isGoal ((0,0), [E,S])
   where
       -- Is the provided position the goal?
       isGoal (pos, _) = pos == goal
@@ -75,13 +74,11 @@ shortestPath grid step_range = fst <$> dijkstra next cost isGoal ((0,0), [E,S])
 
       -- Given a State, find all possible next States
       next :: State -> [State]
-      next ((x,y), dir_options) = do 
-        steps <- step_range
-        dir   <- dir_options
-        let new_pos = move (x,y) steps dir
-        guard $ new_pos `Map.member` grid
-        return (new_pos, moveOptions dir)
-
+      next ((x, y), dirOptions) = [(pos, moveOptions d)
+                                             | i <- stepRange,
+                                               d <- dirOptions,
+                                               let pos = move (x, y) i d,
+                                               pos `Map.member` grid]
 
 
 main = do
