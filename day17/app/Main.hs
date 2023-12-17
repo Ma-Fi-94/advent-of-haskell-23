@@ -14,7 +14,6 @@ import Data.Map (Map)
 import qualified Data.Map as Map
 import Data.Maybe (fromJust)
 
-import Debug.Trace
 
 -- Sugar
 type Pos = (Int, Int)
@@ -43,7 +42,8 @@ move pos i d = case d of
                     E -> first (+i) pos
 
 
--- Options to move after a step in a given direction
+-- Options to move after a step in a given direction.
+
 moveOptions :: Dir -> [Dir]
 moveOptions = \case {N -> [W,E]; S -> [W,E]; W -> [N,S]; E -> [N,S]}
 
