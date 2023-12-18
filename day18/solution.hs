@@ -1,5 +1,7 @@
-import Utils (tok)
+import Control.Arrow (first, second)
+import Data.Char (digitToInt)
 import Numeric (readHex)
+import Utils (tok)
 
 
 ---------- 
@@ -8,7 +10,7 @@ import Numeric (readHex)
 
 
 -- Sugar
-data Direction = R | D | L | U deriving (Eq, Show)
+data Direction = R | D | L | U deriving (Eq, Show, Enum)
 type Count     = Int
 type Colour    = String
 type Entry     = (Direction, Count)
@@ -20,10 +22,10 @@ type Coord     = (Int, Int)
 path :: Coord -> [Entry] -> [Coord]
 path pos es = scanl step pos es
   where
-    step (r, c) (U, i) = (r - i, c)
-    step (r, c) (D, i) = (r + i, c)
-    step (r, c) (L, i) = (r, c - i)
-    step (r, c) (R, i) = (r, c + i)
+    step p (D, i) = first  (+i) p
+    step p (R, i) = second (+i) p
+    step p (L, i) = second (-i+) p
+    step p (U, i) = first  (-i+) p
 
 
 -- Apply the Trapezoid rule to a list of coordinates,
@@ -33,8 +35,8 @@ path pos es = scanl step pos es
 area :: [Coord] -> Int
 area cs = abs . (`div` 2) . sumOfProducts $ cs
   where
-    sumOfProducts (_:[])                  = 0
-    sumOfProducts ((y1,x1):c2@(y2,x2):cs) = p + sumOfProducts (c2:cs)
+    sumOfProducts (_:[])                        = 0
+    sumOfProducts ((y1, x1) : c2@(y2, x2) : cs) = p + sumOfProducts (c2:cs)
       where
         p = (y1 + y2) * (x1 - x2)
 
@@ -45,7 +47,7 @@ solve steps = a + (b `div` 2) + 1
   where
     -- Inner area via Shoelace Formula, see day 10.
     boundary = path (0, 0) steps
-    a = area $ boundary
+    a        = area $ boundary
 
     -- Length of the boundary is the sum of the length of all steps.
     b = sum . map snd $ steps
@@ -75,7 +77,7 @@ parseLine2 :: String -> Entry
 parseLine2 l = (dir, cnt)
   where
     hex = init . drop 2 . last . tok " " $ l
-    dir = case (last hex) of {'0' -> R; '1' -> D; '2' -> L; '3' -> U}
+    dir = toEnum . digitToInt . last $ hex
     cnt = fst . head . readHex . init $ hex
 
 
