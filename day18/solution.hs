@@ -1,24 +1,18 @@
 import Utils (tok)
+import Numeric (readHex)
+
+
+---------- 
+-- Both --
+----------
+
 
 -- Sugar
-data Direction = U| D | L | R deriving (Eq, Show)
+data Direction = R | D | L | U deriving (Eq, Show)
 type Count     = Int
 type Colour    = String
 type Entry     = (Direction, Count)
 type Coord     = (Int, Int)
-
------------- 
--- Part 1 --
-------------
-
-
--- Parse an input line to a tuple (direction, count, colour).
-parseLine :: String -> Entry
-parseLine l = (dir, cnt)
-  where
-    tokens = tok " " l
-    dir    = case (tokens!!0) of {"U" -> U; "D" -> D; "L" -> L; "R" -> R}
-    cnt    = read $ tokens!!1
 
 
 -- Given a starting point and a list of steps,
@@ -44,39 +38,55 @@ area cs = abs . (`div` 2) . sumOfProducts $ cs
       where
         p = (y1 + y2) * (x1 - x2)
 
+
+-- Solve for the complete area including the trenches, using Pick's Theorem
+solve :: [Entry] -> Int
+solve steps = a + (b `div` 2) + 1
+  where
+    -- Inner area via Shoelace Formula, see day 10.
+    boundary = path (0, 0) steps
+    a = area $ boundary
+
+    -- Length of the boundary is the sum of the length of all steps.
+    b = sum . map snd $ steps
+
+
+------------ 
+-- Part 1 --
+------------
+
+
+-- Parse an input line to a tuple (direction, count).
+parseLine :: String -> Entry
+parseLine l = (dir, cnt)
+  where
+    tokens = tok " " l
+    dir    = case (tokens!!0) of {"U" -> U; "D" -> D; "L" -> L; "R" -> R}
+    cnt    = read $ tokens!!1
+
+
 ------------ 
 -- Part 2 --
 ------------
 
 
+-- Parse an input line to a tuple (direction, count).
+parseLine2 :: String -> Entry
+parseLine2 l = (dir, cnt)
+  where
+    hex = init . drop 2 . last . tok " " $ l
+    dir = case (last hex) of {'0' -> R; '1' -> D; '2' -> L; '3' -> U}
+    cnt = fst . head . readHex . init $ hex
+
+
 main = do
   
     filecontents <- readFile "input.txt"
-    let steps = map parseLine . lines $ filecontents
-    print $ steps
-    print $ path (0,0) steps
 
-    ------------
-    -- Part 1 --
-    ------------
+    -- Part 1
+    print $ solve . map parseLine . lines $ filecontents
 
-    -- Inner area via Shoelace Formula again, see day 10.
-    let boundary = path (0, 0) steps
-    let a = area $ boundary
-
-    -- The border now has a thickness of 1. Hence, we just
-    -- add all lengths of the steps.
-    let b = sum . map snd $ steps
-
-    -- Pick's Theorem, once again!
-    print $ a + (b `div` 2) + 1
-
-
-
-    ------------
-    -- Part 2 --
-    ------------
-
-
+    -- Part 2
+    print $ solve . map parseLine2 . lines $ filecontents
 
     print $ "---------- Done. ----------"
