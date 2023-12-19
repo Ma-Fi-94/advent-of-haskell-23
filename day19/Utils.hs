@@ -3,21 +3,29 @@ module Utils where
 import Data.Maybe
 import qualified Data.Map as Map
 
------------
--- Sugar --
------------
+-------------
+-- Reading --
+-------------
 
 readInt     = (read :: String -> Int)
 readInteger = (read :: String -> Integer)
 readDouble  = (read :: String -> Double)
 
-fir (a, _, _) = a
-sec (_, b, _) = b
-thi (_, _, c) = c
+
+------------
+-- Tuples --
+------------
+
+fst3 (a, _, _) = a
+snd3 (_, b, _) = b
+thi3 (_, _, c) = c
+
+fst4 (a, _, _, _) = a
+snd4 (_, b, _, _) = b
+thi4 (_, _, c, _) = c
+fou4 (_, _, _, d) = d
 
 
-dropWhileIncl :: Eq a => (a -> Bool) -> [a] -> [a]
-dropWhileIncl p = drop 1 . dropWhile p
 ------------------
 -- Arrow things --
 ------------------
@@ -45,6 +53,12 @@ second = \f (x, y) -> (x, f y)
 -----------
 -- Lists --
 -----------
+
+-- Like dropWhile, but also drops the first element
+-- that does not fulfill the predicate any more.
+dropWhileIncl :: Eq a => (a -> Bool) -> [a] -> [a]
+dropWhileIncl p = drop 1 . dropWhile p
+
 
 -- Find the first recurring element and return
 -- the index of its first and its second occurrence
@@ -78,7 +92,7 @@ groupn n xs = (take n xs) : (groupn n (drop n xs))
 
 
 -- Tokenise an array into a list of arrays based on delimiters
--- Multiple delimiters are considered as one token.
+-- Multiple delimiters are considered as one delimiter.
 -- Delimiters at the beginning and end are ignored
 tok :: Eq a => [a] -> [a] -> [[a]]
 tok _ [] = []

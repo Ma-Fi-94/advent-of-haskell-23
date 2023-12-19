@@ -1,9 +1,7 @@
 import Data.Char (isDigit)
 import qualified Data.Map as Map
 import Data.Map (Map)
-import Utils (tok, dropWhileIncl, (&&&))
-
-import Debug.Trace (trace)
+import Utils (tok, dropWhileIncl)
 
 -- Sugar
 type Part         = [Int]
@@ -57,13 +55,11 @@ parsePart inp = numbers
 decide :: WorkflowMap -> Workflow -> Part -> Bool
 decide _ ((Right "A"):_) _ = True
 decide _ ((Right "R"):_) _ = False
-decide wfm ((Right s):steps) pt = decide wfm (wfm Map.! s) pt
+decide wfm ((Right s):_) pt = decide wfm (wfm Map.! s) pt
 decide wfm ((Left (idx, op, opd, goto)):steps) pt
     |op == Less    && pt!!idx < opd = decide wfm [(Right goto)] pt
     |op == Greater && pt!!idx > opd = decide wfm [(Right goto)] pt
     |otherwise                      = decide wfm steps pt
-
-      
 
 
 main = do
