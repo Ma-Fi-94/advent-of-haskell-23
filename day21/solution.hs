@@ -53,14 +53,14 @@ bfs :: Grid Char -> Coord -> [Coord] -> [(Coord, Int)]
 bfs grid start toFind = go [start] [] 0
   where
     go x y ctr
-        |trace (show ctr) False = undefined
+        |trace (show ctr) False = undefined -- for the impatient (like me)
     go []    founds _   = founds
     go queue founds ctr = go queue' founds' (ctr+1)
       where
         founds'          = founds ++ (zip queue (repeat ctr))
         queue'           = allNewNeighbours
-        allNewNeighbours = filter (`elem` toFind)               -- filter out these we don't even need to find
-                         . filter (`notElem` (map fst founds))  -- filter out these we already found
+        allNewNeighbours = filter (`elem` toFind)               -- filter out those we don't even need to find
+                         . filter (`notElem` (map fst founds))  -- filter out those we already found
                          . nub                                  -- Discard duplicates
                          $ concatMap (getNeighbours grid) queue -- list of all neighbours of all cells in queue
 
@@ -90,7 +90,7 @@ main = do
     let finishs = findDestinations grid start 65
 
     -- For every walkable cell, we get the minimum result from the start
-    --let bfsResult = bfs grid start finishs
+    let bfsResult = bfs grid start finishs
 
     -- Now we retain only those cells that have a minimum distance <=
     -- the given threshold, and an even number of steps.
@@ -101,26 +101,55 @@ main = do
           . filter ((<=64) . snd)
           $ bfsResult
 
+    
     ------------
     -- Part 2 --
     ------------
 
-    -- Extend the given patch three times in every direction,
-    -- then calculate BFS on it.
-    -- Because we only need the numbers up to 65 + 2*131 steps,
-    -- we can safely cap the set of finishing points to evaluate at
-    -- the taxicab metric below this number plus some padding.
-
     -- Note the the rown and column of the starting point, as well
-    -- as the border of the patch are entirely free.
-    -- Hence, the number of fields we can visit should scale
-    -- quadratically in k.    
+    -- as the border of the patch are entirely free. Hence, the number
+    -- of fields we can visit should scale quadratically in k, where
+    -- k denotes the number of the patch. For a polynomial of degree 2,
+    -- we will need 3 points, such as 65 + k*131, k = 0, 1, 2.
 
+    -- First, we extend the given patch three times in every direction,
+    -- then calculate BFS on it. Because we only need the numbers up to
+    -- 65 + 2*131 steps, we can safely cap the set of finishing points
+    -- to evaluate at the taxicab metric below this number plus some padding.
+    -- It still takes a lot of time :(.
+    input2         <- lines <$> readFile "input.txt"
+    let grid2      = Grid.fromList . replaceStart . appendN 3 $ input2
+    let start2     = findStart grid2
+    let finishs2   = findDestinations grid2 start2 (65 + 2*131 + 2)
+    let bfsResult2 = bfs grid2 start2 finishs2
+   
     -- We then calculate the number at 65 + k*131 for k = 0, 1, 2.
-    -- We get: 3770, 33665, 93356, to which we can fit a polynomial
-    -- of degree 2: f(k) = 14898 k^2 + 14997 k + 3770.
-    -- It only remains to evaluate f at k* = (26501365 - 65) / 131.
-    -- We get f(k*) = 609708004316870, which is our answer.
+    -- Importantly, we need to adapt the last filtering step,
+    -- depending on the parity!
+
+    -- f(k=0) = 3770
+    print $ length
+          . filter (odd . snd)
+          . filter ((<=65) . snd)
+          $ bfsResult2
+
+    -- f(k=1) = 33665
+    print $ length
+          . filter (even . snd)
+          . filter ((<=(65 + 131)) . snd)
+          $ bfsResult2
+    
+    -- f(k=2) = 93356
+    print $ length
+          . filter (odd . snd)
+          . filter ((<=(65 + 2 * 131)) . snd)
+          $ bfsResult2
+
+    -- To these, we fit f(k) = 14898 k^2 + 14997 k + 3770. It only remains
+    -- to evaluate f at k' = (26501365 - 65) / 131 = 202300. We get
+    -- f(k') = 609708004316870, which is our answer.
+    let k' = 202300
+    print $ 14898 * k'^2 + 14997 * k' + 3770
    
     
     print $ "---------- Done. ----------"
