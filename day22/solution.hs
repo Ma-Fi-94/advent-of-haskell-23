@@ -6,7 +6,6 @@ import Data.Set (Set)
 import qualified Data.Set as Set
 import Utils (tok, thi3)
 
-
 -----------
 -- Sugar --
 -----------
@@ -18,7 +17,7 @@ type HeightMap  = Map Coord2 Height
 type Coord2     = (Int, Int)        -- (x,y)
 type Height     = Int
 
-type BlockSet   = Set [Block]
+type BlockSet   = Set Block
 type SupportMap = Map Block [Block]
 
 
@@ -118,7 +117,21 @@ supports bs b = belows bs b
 -- directly or indirectly depend on it. Returns the updated Set of Blocks.
 removeSome :: BlockSet -> SupportMap -> [Block] -> BlockSet
 removeSome blockset _          []     = blockset
-removeSome blockset supportmap blocks = undefined
+removeSome blockset supportmap blocks = removeSome blockset' supportmap'' blocks'
+  where
+    blockset'    = blockset `Set.difference` (Set.fromList blocks)
+    supportmap'  = Map.map (filter (`notElem` blocks)) supportmap
+    supportmap'' = Map.filter (not . null) supportmap'
+    blocks'      = map fst . Map.toList . Map.filter null $ supportmap'
+
+
+-- Count how many additional bricks would collapse if we remove
+-- from the given BlockSet, under the given SupportMap, a given Brick.
+countDownstream :: BlockSet -> SupportMap -> Block -> Int
+countDownstream bs sm b = l - l' - 1
+  where
+    l  = length bs
+    l' = length $ removeSome bs sm [b]
 
 
 main = do
@@ -128,7 +141,7 @@ main = do
     ------------
 
     -- Read and sort blocks by minimum z coordinate
-    input <- sortBlocks . map parseLine . lines <$> readFile "test.txt"
+    input <- sortBlocks . map parseLine . lines <$> readFile "input.txt"
 
     -- Make a map that tracks maximum occupied height for every (x,y).
     -- Initialise with the ground at z=0.
@@ -146,6 +159,9 @@ main = do
     -- Part 2 --
     ------------
 
+    -- For performance, we store *all* of the blocks in a set.
+    let blockSet = Set.fromList blocks
+
     -- We only need to examine those bricks that are "unsafe", i.e.
     -- every brick that will trigger other bricks to fall if we remove it.
     let unsafes = filter (not . removable blocks) $ blocks
@@ -153,10 +169,8 @@ main = do
     -- Next, for every brick we store by which bricks it is supported.
     let supportMap = Map.fromList $ zip blocks (map (supports blocks) blocks)
 
-    -- For performance, we store *all* of the blocks in a set.
-    let blockSet = Set.fromList blocks
-
-
+    -- Finally, we just have to sum the result of every unsafe brick.
+    print $ sum $ map (countDownstream blockSet supportMap) unsafes
 
     print $ "---------- Done. ----------"
 
