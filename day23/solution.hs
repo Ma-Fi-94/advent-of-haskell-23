@@ -38,8 +38,6 @@ neighbours m (r, c) = case (cell m (r, c)) of
 
 
 -- The actual search: Returns a list of all path length from start to finish.
--- We provide a 'neighbours' function as first parameter, so we can recycle
--- the function for part 2.
 dfs :: Maze -> Coord -> [Int]
 dfs m c = go 0 Set.empty [c]
   where
@@ -58,11 +56,6 @@ main = do
 
     input    <- readFile "input.txt"
     let maze =  Grid.fromList . lines $ input
-
-    ------------
-    -- Part 1 --
-    ------------
-
     print $ maximum $ dfs maze (start maze)
 
     print $ "---------- Done. ----------"

@@ -10,6 +10,11 @@ type Coord = (Int, Int)
 data Grid a = Grid Int Int (Map Coord a) deriving Show
 
 
+-- Get height and width of a grid
+size :: Grid a -> (Int, Int)
+size (Grid h w _) = (h, w)
+
+
 -- Make a Grid from a given list of lists.
 -- Checks whether input is wellformed.
 fromList :: [[a]] -> Grid a
