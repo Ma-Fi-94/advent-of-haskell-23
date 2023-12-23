@@ -1,5 +1,7 @@
 import Data.List (elemIndex, (\\))
 import Data.Maybe (fromJust)
+import Data.Set (Set)
+import qualified Data.Set as Set
 import Grid
 
 -----------
@@ -36,25 +38,30 @@ neighbours m (r, c) = case (cell m (r, c)) of
 
 
 -- The actual search: Returns a list of all path length from start to finish.
+-- We provide a 'neighbours' function as first parameter, so we can recycle
+-- the function for part 2.
 dfs :: Maze -> Coord -> [Int]
-dfs m c = go 0 [] [c]
+dfs m c = go 0 Set.empty [c]
   where
     go ctr visited queue
         |queue == []   = [] 
-        |q == finish m = [ctr]                           ++ go ctr visited qs
-        |otherwise     = go (ctr + 1) (q:visited) neighs ++ go ctr visited qs
+        |q == finish m = [ctr]                      ++ go ctr visited qs
+        |otherwise     = go (ctr+1) visited' neighs ++ go ctr visited qs
           where
-            (q:qs) = queue
-            neighs = (neighbours m q) \\ visited
+            (q:qs)   = queue
+            neighs   = filter (`Set.notMember` visited) (neighbours m q)
+            visited' = (Set.insert q visited)
+
+
 
 main = do
+
+    input    <- readFile "input.txt"
+    let maze =  Grid.fromList . lines $ input
 
     ------------
     -- Part 1 --
     ------------
-
-    input    <- readFile "test.txt"
-    let maze =  Grid.fromList . lines $ input
 
     print $ maximum $ dfs maze (start maze)
 
