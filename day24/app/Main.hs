@@ -5,6 +5,7 @@ import System.IO.Unsafe
 import Data.Maybe (isJust, fromJust, catMaybes)
 import Utils (tok)
 import Debug.Trace (trace)
+import System.Process
 
 -- This script requires a working executable of Z3, to be placed
 -- somewhere into $PATH.
@@ -57,97 +58,108 @@ uniquePairs []     = []
 uniquePairs (x:xs) = [(x, y) | y <- xs] ++ uniquePairs xs
 
 
+------------
+-- Part 2 --
+------------
+
+scriptHeader :: [String]
+scriptHeader = ["(declare-const sx Int)",
+                "(declare-const sy Int)",
+                "(declare-const sz Int)",
+                "",
+                "(declare-const svx Int)",
+                "(declare-const svy Int)",
+                "(declare-const svz Int)",
+                "",
+                "(declare-const t1 Int)",
+                "(declare-const t2 Int)",
+                "(declare-const t3 Int)",
+                ""]
+
+
+scriptFooter :: [String]
+scriptFooter = ["(check-sat)",
+                "(get-model)"]
+
+
+scriptBlock :: (Int, Entry) -> [String]
+scriptBlock (t, ((x0, y0, z0), (vx, vy, vz))) =
+  ["(assert (= (+ sx (* t" ++ show t ++ " svx)) (+ " ++ show x0 ++ " (* t" ++ show t ++ " " ++ show vx ++ "))))",
+   "(assert (= (+ sy (* t" ++ show t ++ " svy)) (+ " ++ show y0 ++ " (* t" ++ show t ++ " " ++ show vy ++ "))))",
+   "(assert (= (+ sz (* t" ++ show t ++ " svz)) (+ " ++ show z0 ++ " (* t" ++ show t ++ " " ++ show vz ++ "))))",
+   "" ]
+
+
 
 main = do
-    input       <- readFile "input.txt"
-    let entries = map parseLine . lines $ input
+  input       <- readFile "input.txt"
+  let entries = map parseLine . lines $ input
 
 
-    ------------
-    -- Part 1 --
-    ------------
+  ------------
+  -- Part 1 --
+  ------------
 
-    print $ length 
-          . filter (\(x, y) -> x >= 200000000000000 
-                            && x <= 400000000000000
-                            && y >= 200000000000000
-                            && y <= 400000000000000)
-          . catMaybes
-          . map (uncurry intersect2d)
-          $ uniquePairs entries
+  print $ length 
+        . filter (\(x, y) -> x >= 200000000000000 
+                          && x <= 400000000000000
+                          && y >= 200000000000000
+                          && y <= 400000000000000)
+        . catMaybes
+        . map (uncurry intersect2d)
+        $ uniquePairs entries
 
-	------------
-	-- Part 2 --
-	------------
 
-	-- We now need to solve a system of nonlinear equations. We do this 
-	-- in Z3 by manually writing an SMT script.
-	-- Note that we need to determine 6 variables for the initial conditions,
-	-- and for every hailstone another one (the time of collision). However,
-	-- every hailstone adds three equations (for x,y,z of collision) to the system,
-	-- hence every hailstone reduces degrees of freedom by two. Thus, three
-	-- hailstones provide enough information to make the system solvable.
-	-- We assume that the input is constructed in a way that any 3 hailstones
-	-- do the trick, so we just take the first three one of the input file.
+  ------------
+  -- Part 2 --
+  ------------
 
-	-- Our script:
+  -- We now need to solve a system of nonlinear equations. We do this 
+  -- manually in Z3, but generate the SMT script automatically.
+  -- Note that we need to determine 6 variables for the initial conditions,
+  -- and for every hailstone another one (the time of collision). However,
+  -- every hailstone adds three equations (for x,y,z of collision) to the system,
+  -- hence every hailstone reduces degrees of freedom by two. Thus, three
+  -- hailstones provide enough information to make the system solvable.
+  -- We assume that the input is constructed in a way that any 3 hailstones
+  -- do the trick, so we just take the first three one of the input file.
 
-	{-
-	(declare-const sx Int)
-	(declare-const sy Int)
-	(declare-const sz Int)
+  -- Make the script
+  let script =  scriptHeader
+             ++ (concatMap scriptBlock . zip [1..] $ take 3 entries)
+             ++ scriptFooter
+  writeFile "part2.smt" $ unlines script
 
-	(declare-const svx Int)
-	(declare-const svy Int)
-	(declare-const svz Int)
+  -- Run it through z3 by typing
+  -- "z3 part2.smt" in the command line
 
-	(declare-const t1 Int)
-	(declare-const t2 Int)
-	(declare-const t3 Int)
+  -- The output by Z3
 
-	(assert (= (+ sx (* t1 svx)) (+ 219051609191782 (* t1 146))))
-	(assert (= (+ sy (* t1 svy)) (+ 68260434807407  (* t1 364))))
-	(assert (= (+ sz (* t1 svz)) (+ 317809635461867 (* t1 -22))))
+  {-
+  sat
+  (
+    (define-fun t3 () Int
+      891640066892)
+    (define-fun sz () Int
+      177831791810924)
+    (define-fun t2 () Int
+      447383459952)
+    (define-fun svz () Int
+      179)
+    (define-fun t1 () Int
+      696407182343)
+    (define-fun svy () Int
+      210)
+    (define-fun sx () Int
+      187016878804004)
+    (define-fun sy () Int
+      175507140888229)
+    (define-fun svx () Int
+      192)
+  )
+  -}
+  
+  -- Thus, the answer is:
+  print $ 187016878804004 + 175507140888229 + 177831791810924
 
-	(assert (= (+ sx (* t2 svx)) (+ 292151991892724 (* t2 -43))))
-	(assert (= (+ sy (* t2 svy)) (+ 394725036264709 (* t2 -280))))
-	(assert (= (+ sz (* t2 svz)) (+ 272229701860796 (* t2 -32))))
-
-	(assert (= (+ sx (* t3 svx)) (+ 455400538938496 (* t3 -109))))
-	(assert (= (+ sy (* t3 svy)) (+ 167482380286201 (* t3 219))))
-	(assert (= (+ sz (* t3 svz)) (+ 389150487664328 (* t3 -58))))
-
-	(check-sat)
-	(get-model)
-	-}
-
-	-- The output by Z3
-
-	{-
-	sat
-	(
-	  (define-fun t3 () Int
-	    891640066892)
-	  (define-fun sz () Int
-	    177831791810924)
-	  (define-fun t2 () Int
-	    447383459952)
-	  (define-fun svz () Int
-	    179)
-	  (define-fun t1 () Int
-	    696407182343)
-	  (define-fun svy () Int
-	    210)
-	  (define-fun sx () Int
-	    187016878804004)
-	  (define-fun sy () Int
-	    175507140888229)
-	  (define-fun svx () Int
-	    192)
-	)
-	-}
-
-	-- Thus, the solution is 187016878804004 + 175507140888229 + 177831791810924.
-    print $ 187016878804004 + 175507140888229 + 177831791810924
-
-    print $ "---------- Done. ----------"
+  print $ "---------- Done. ----------"
